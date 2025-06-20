@@ -16,7 +16,7 @@ rocket:
         combined_cm: !numpy/array [1.03, 0., 0.]
         combined_cp: !numpy/array [0.63, 0., 0.]
       motor:
-        <<: *motor_M2500
+        <<: *motor_O5500x
       sensors:
         high_g:
           RMS: 1.9 # milli g
@@ -44,7 +44,7 @@ rocket:
         combined_cm: !numpy/array [1.03, 0., 0.]
         combined_cp: !numpy/array [0.63, 0., 0.]
       motor:
-        <<: *motor_M2500
+        <<: *motor_M685w
       sensors:
         high_g:
           RMS: 1.9 # milli g

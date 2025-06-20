@@ -5,3 +5,5 @@ pandas
 PyYAML
 scipy
 tqdm
+requests
+python-dotenv

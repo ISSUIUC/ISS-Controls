@@ -9,3 +9,6 @@ Simulation/6DOF_RK4/Output/
 **/.DS_Store
 
 **/.vscode/
+
+Simulation/6DOF_RK4/local.env
+

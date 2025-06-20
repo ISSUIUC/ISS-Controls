@@ -45,7 +45,10 @@ import simulator as sim_class
 import dynamics.sensors as sensors
 import time
 import dynamics.rocket as rocket_model
+import environment.real_atmosphere as real_atmosphere
 import environment.atmosphere as atmosphere
+import datetime
+
 
 # Load desired config file
 config = dataloader.config
@@ -173,8 +176,11 @@ if __name__ == '__main__':
     x0 = np.zeros((6, 3))
     x0[3] = [0, 0.05, 0]
     dt = 0.01
-
-    atm = atmosphere.Atmosphere(enable_direction_variance=True, enable_magnitude_variance=True)
+    
+    #atm = atmosphere.Atmosphere(enable_direction_variance=True, enable_magnitude_variance=True)
+    date = datetime.date(2025, 6, 20)
+    atm = real_atmosphere.RealAtmosphere(latitude=35.347232, longitude=-117.808217, date=date, time=800)
+    print(atm.summary())
 
     stages = []
     for stage in config['rocket']['stages'][1:]:
@@ -208,6 +214,7 @@ if __name__ == '__main__':
     #     for point in record:
     #         f.write(f"{','.join(point)}\n")
     output_file = os.path.join(os.path.dirname(__file__), config["meta"]["output_file"])
+    os.makedirs(os.path.dirname(output_file), exist_ok=True)
     with open(output_file, 'w') as f:
         f.write("time,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,accel_x,accel_y,accel_z,ang_pos_x,ang_pos_y,ang_pos_z,ang_vel_x,ang_vel_y,ang_vel_z,ang_accel_x,ang_accel_y,ang_accel_z,alpha,rocket_total_mass,motor_mass,flap_ext,baro_alt,imu_accel_x,imu_accel_y,imu_accel_z,imu_ang_pos_x,imu_ang_pos_y,imu_ang_pos_z,imu_gyro_x,imu_gyro_y,imu_gyro_z,kalman_pos_x,kalman_vel_x,kalman_accel_x,kalman_pos_y,kalman_vel_y,kalman_accel_y,kalman_pos_z,kalman_vel_z,kalman_accel_z,pos_cov_x,vel_cov_x,accel_cov_x,pos_cov_y,vel_cov_y,accel_cov_y,pos_cov_z,vel_cov_z,accel_cov_z,kalman_rpos_x,kalman_rvel_x,kalman_raccel_x,kalman_rpos_y,kalman_rvel_y,kalman_raccel_y,kalman_rpos_z,kalman_rvel_z,kalman_raccel_z\n")
         for point in record:
