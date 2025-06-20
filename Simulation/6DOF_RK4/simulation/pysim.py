@@ -178,7 +178,7 @@ if __name__ == '__main__':
     dt = 0.01
     
     #atm = atmosphere.Atmosphere(enable_direction_variance=True, enable_magnitude_variance=True)
-    date = datetime.date(2025, 6, 20)
+    date = datetime.date(2025, 6, 21)
     atm = real_atmosphere.RealAtmosphere(latitude=35.347232, longitude=-117.808217, date=date, time=800)
     print(atm.summary())
 

@@ -88,11 +88,19 @@ class RealAtmosphere:
         if altitude is None:
             altitude = self.altitude
         P_0 = 101325
-        T_0 = 288.15
-        g = 9.80665
-        L = 0.0065
+
+        # pressure under standard condition in (Pa)
+        T_0 = 288.16 
+
+        # Temperature lapse rate in k/m assuming temperature varies linearly based on altitude 
+        b = 0.0065
+
+        # gravitational constant 
+        g = 9.81
+
         R = 287.05
-        return P_0 * (1 - (L * altitude) / T_0) ** (g / (R * L))
+
+        return P_0 * ((T_0 +(altitude)*b)/T_0)**(-g/(b*R))
 
     def get_density(self, altitude=None, noise=False, position=np.array([0,0,0])):
         R = 287.05
@@ -178,12 +186,14 @@ class RealAtmosphere:
         temp = self.get_temperature()
         pres = self.get_pressure()
         wind = self.get_wind()
+        wind_vector = self.get_wind_vector()
         dens = self.get_density()
         return {
             'temperature_K': temp,
             'pressure_Pa': pres,
             'wind_speed': wind[0],
             'wind_direction': wind[1],
+            'wind_vector': wind_vector,
             'density_kgm3': dens,
             'altitude_m': self.altitude
         }
