@@ -1,4 +1,4 @@
-import yaml 
+import yaml
 import numpy
 import os
 from properties.yaml_datatypes import get_loader

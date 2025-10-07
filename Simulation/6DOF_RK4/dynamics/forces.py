@@ -91,9 +91,9 @@ class Forces:
                     
         Returns:
             [Ca, Cn, Cp]
-            Ca (float): Coefficinet of Axial Force
-            Cn (float): Coefficinet of Normal Force
-            Cp (np.array): Coefficinet of Pressure
+            Ca (float): Coefficient of Axial Force
+            Cn (float): Coefficient of Normal Force
+            Cp (np.array): Coefficient of Pressure
         '''
         alt = x_state[0,0]
         vel = x_state[1]

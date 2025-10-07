@@ -2,6 +2,7 @@ import math
 import numpy as np
 import os
 import sys
+import pandas as pd
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 import environment.atmosphere as atmosphere
@@ -22,6 +23,7 @@ class Rocket:
     multiplier = 1
 
     def init_dicts(self):
+
         self.sim_dict = {
             "pos": [],
             "vel": [],
@@ -33,7 +35,7 @@ class Rocket:
             "flap_ext": [],
             "rocket_total_mass": [],
             "motor_mass": [],
-            "time": [],
+            "time": []
         }
 
         self.kalman_dict = {
@@ -59,8 +61,25 @@ class Rocket:
             "imu_ang_pos_z": [],
             "imu_gyro_x": [],
             "imu_gyro_y": [],
-            "imu_gyro_z": [],
+            "imu_gyro_z": []
         }
+        
+        #Import dataframe from CSV so it doesn't have to call it every time
+
+        dir = os.path.dirname(os.path.dirname(os. path.abspath(__file__)))
+        csv_path = os.path.join(dir, "LookUp", "ekf_cd_test.csv")
+        self.coeffs_df = pd.read_csv(csv_path)
+
+        self.coeffs_dict = {
+            "CN": [0],
+            "CA Power-On": [0],
+            "CA Power-Off": [0],
+            "CD Power-On": [0],
+            "CD Power-Off": [0],
+            "CL": [0],
+            "CP": [0]
+        }
+
 
     def __init__(self, dt, x0, stage_config, atm:atmosphere.Atmosphere=None, stages:list=[]):
         self.stage_config = stage_config
@@ -68,24 +87,28 @@ class Rocket:
         self.cm_motor = stage_config["motor"]["cm"]
         self.cm = stage_config['rocket_body']['combined_cm']
         self.cp = stage_config['rocket_body']['combined_cp']
+        
+        self.dt = dt
 
         self.impulse = stage_config["motor"]["impulse"]
         self.motor_mass = stage_config["motor"]["motor_mass"]
         self.delay = stage_config["motor"]["delay"]
         self.motor_lookup_file = stage_config["motor"]["motor_lookup_file"]
-        self.Navigation = Navigation(dt, stage_config['sensors'], x0) 
+        self.Navigation = Navigation(dt, stage_config['sensors'], x0, self) 
 
         self.rocket_dry_mass = stage_config["rocket_body"]["dry_mass"]
         self.rocket_total_mass = self.rocket_dry_mass + self.motor_mass
         self.r_r = stage_config["rocket_body"]["radius"]
         self.l = stage_config["rocket_body"]["length"]
-        self.A = math.pi * self.r_r ** 2
-        self.A_s = 2 * self.r_r * self.l
+        self.A = math.pi * self.r_r ** 2 
+        self.A_s = 2 * self.r_r * self.l # surface area
         self.max_ext_length = stage_config["flaps"]["max_ext_length"]
         self.atm = atm
-
         self.init_dicts()
         
+        # Initializing the coefficients
+        # self.update_coeffs(0, 0)
+
         # Add stages to rocket via this list. Only the base rocket object should have stages, each stage should be its own rocket object with no stages
         self.stages = stages
         
@@ -121,6 +144,7 @@ class Rocket:
                                     self.motor,
                                     stage_config["rocket_body"]["rasaero_lookup_file"],
                                     self.atm)
+        #Do we need to pass self.coeffs_df into Forces?
 
 
     def get_total_motor_mass(self, timestamp) -> float:
@@ -207,6 +231,24 @@ class Rocket:
     def get_Rasaero(self):
         return self.rasaero if self.current_stage == -1 else self.stages[self.current_stage].get_Rasaero()
     
+    def get_cn(self):
+        return self.coeffs_dict["CN"][-1]
+    
+    def get_ca_on(self):
+        return self.coeffs_dict["CA Power-On"][-1]
+    
+    def get_ca_off(self):
+        return self.coeffs_dict["CA Power-Off"][-1]
+    
+    def get_cd_on(self):
+        return self.coeffs_dict["CD Power-On"][-1]
+    
+    def get_cd_off(self):
+        return self.coeffs_dict["CD Power-Off"][-1]
+    
+    def get_cp(self):
+        return self.coeffs_dict["CP"][-1]
+
     def I(self, total_mass): 
         """Returns the inertia matrix of the rocket
         
@@ -337,6 +379,22 @@ class Rocket:
         self.sim_dict["alpha"].append(alpha)
         self.sim_dict["rocket_total_mass"].append(rocket_total_mass)
         self.sim_dict["motor_mass"].append(motor_mass)
+
+        #Update coefficients (how to find angle of attack???)
+        self.update_coeffs(np.linalg.norm(x[1]))
+
+    def update_coeffs(self, velocity):
+        a = velocity / 340.29
+        if (a < 0.01):
+            a = 0.01
+        df_specific = self.coeffs_df[(self.coeffs_df["Alpha"] == 2) & (self.coeffs_df["Mach"] == round(a, 2))]
+        self.coeffs_dict["CN"].append(df_specific["CN"].values[0])
+        self.coeffs_dict["CA Power-On"].append(df_specific["CA Power-On"].values[0])
+        self.coeffs_dict["CA Power-Off"].append(df_specific["CA Power-Off"])
+        self.coeffs_dict["CD Power-On"].append(df_specific["CD Power-On"])
+        self.coeffs_dict["CD Power-Off"].append(df_specific["CD Power-Off"])
+        self.coeffs_dict["CL"].append(df_specific["CL"])
+        self.coeffs_dict["CP"].append(df_specific["CP"])
 
     # Converts the data saved in this sim into csv
     def to_csv(self):

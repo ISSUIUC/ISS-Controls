@@ -23,6 +23,11 @@
 # Ishaan Bansal (2025)
 # Ethan Pereira (2026)
 
+# 2024-2025 Guidance, Navigation, and Control Main Contributors #
+# Sub-Team Lead: Shishir Bhatta (2026)
+# Ishaan Kandamuri (2026)
+# Aneesh Ganti (2028)
+
 import numpy as np
 import matplotlib.pyplot as plt
 import os
@@ -62,14 +67,16 @@ class Simulation:
         if (self.nominal  == tiltCommand):
             sim.Vmultiplier = 30
         self.sensor_config = self.rocket.stage_config['sensors']
-    
+
+    # Call on Navigation class?
+
     def time_step(self):
         self.time_stamp += self.dt
 
     def idle_stage(self):
         while self.time_stamp < self.rocket.delay:
             baro_alt, accel, gyro, bno_ang_pos = self.get_sensor_data()
-            self.rocket.Navigation.update_state(baro_alt, accel, gyro, bno_ang_pos)
+            self.rocket.Navigation.update_state(baro_alt, accel, gyro, bno_ang_pos, self.time_stamp)
             self.rocket.Navigation.kalman_filter.reset_lateral_pos()
             current_state, current_covariance, current_state_r = self.get_kalman_state()
 
@@ -89,7 +96,9 @@ class Simulation:
         while self.time_stamp < ignition_time + self.rocket.get_motor().get_burn_time() + stage_separation_delay:
             # Get sensor data
             baro_alt, accel, gyro, bno_ang_pos = self.get_sensor_data()
-            self.rocket.Navigation.update_state(baro_alt, accel, gyro, bno_ang_pos)
+            
+            
+            self.rocket.Navigation.update_state(baro_alt, accel, gyro, bno_ang_pos, self.time_stamp)
             current_state, current_covariance, current_state_r = self.get_kalman_state()
 
             self.rocket.set_motor_mass(self.time_stamp)
@@ -129,7 +138,7 @@ class Simulation:
         while self.x[1, 0] >= 0:
         # Get sensor data
             baro_alt, accel, gyro, bno_ang_pos = self.get_sensor_data()
-            self.rocket.Navigation.update_state(baro_alt, accel, gyro, bno_ang_pos)
+            self.rocket.Navigation.update_state(baro_alt, accel, gyro, bno_ang_pos, self.time_stamp)
             current_state, current_covariance, current_state_r = self.get_kalman_state()
 
             self.x, alpha = sim.RK4(self.x, dt, self.time_stamp, 0)
