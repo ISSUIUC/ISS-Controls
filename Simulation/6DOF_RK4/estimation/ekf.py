@@ -55,7 +55,7 @@ class KalmanFilter:
 
         # accelerometer 3 axes
         # barometric altimeter 1 axis
-        self.H = np.array([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+        self.H = np.array([[1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 , 0.0, 0.0],
                            [0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
                            [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0],
                            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0]])
@@ -101,7 +101,7 @@ class KalmanFilter:
         Faz = 0.5*rho*(vel_mag**2)*(Cn*vel_norm_inv)*(np.pi*r**2)
 
         # Transform forces to body frame
-        Fg = np.array([-g, 0, 0])
+        Fg = np.array([-g, 0, 0]) * m
         Fg_body = np.linalg.inv(R) @ Fg
         Fgx, Fgy, Fgz = Fg_body[0], Fg_body[1], Fg_body[2]
         Ftx, Fty, Ftz = T[0],T[1],T[2]
@@ -113,16 +113,16 @@ class KalmanFilter:
                 ])
         
         self.x_priori = self.x_k + xdot * self.s_dt
-        
+        coeff = -np.pi*Ca*(r**2)*rho / m
         # linearized dynamics are F
         self.F = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 0],
-                        [0, 0, 1/2, 0, w_z/2, 0, 0, -w_y/2, 0], 
+                        [0, coeff*vel_x, 0, 0, coeff*vel_y+w_z, 0, 0, coeff*vel_z - w_y, 0], 
                         [0, 0, 0, 0, 0, 0, 0, 0, 0], 
                         [0, 0, 0, 0, 1, 0, 0, 0, 0], 
-                        [0, -w_z/2, 0, 0, 0, 1/2, 0, w_x/2, 0], 
+                        [0, -w_z, 0, 0, 0, 0, 0, w_x, 0], 
                         [0, 0, 0, 0, 0, 0, 0, 0, 0], 
                         [0, 0, 0, 0, 0, 0, 0, 1, 0], 
-                        [0, w_y/2, 0, 0, -w_x/2, 0, 0, 0, 1/2], 
+                        [0, w_y, 0, 0, -w_x, 0, 0, 0, 0], 
                         [0, 0, 0, 0, 0, 0, 0, 0, 0]])
 
         self.P_priori = self.F @ self.P_k @ self.F.T + self.Q
