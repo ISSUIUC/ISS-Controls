@@ -107,9 +107,9 @@ class KalmanFilter:
         Ftx, Fty, Ftz = T[0],T[1],T[2]
 
         
-        xdot = np.array([vel_x, ((Fax + Ftx + Fgx) / m - (w_y*vel_z - w_z*vel_y) + acc_x) / 2, 0.0,
-                 vel_y, ((Fay + Fty + Fgy) / m - (w_z*vel_x - w_x*vel_z) + acc_y) / 2, 0.0,
-                 vel_z, ((Faz + Ftz + Fgz) / m - (w_x*vel_y - w_y*vel_x) + acc_z) / 2, 0.0
+        xdot = np.array([vel_x, ((Fax + Ftx + Fgx) / m - (w_y*vel_z - w_z*vel_y)), 0.0,
+                 vel_y, ((Fay + Fty + Fgy) / m - (w_z*vel_x - w_x*vel_z) ), 0.0,
+                 vel_z, ((Faz + Ftz + Fgz) / m - (w_x*vel_y - w_y*vel_x)), 0.0
                 ])
         
         self.x_priori = self.x_k + xdot * self.s_dt
