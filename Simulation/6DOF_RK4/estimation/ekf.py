@@ -32,7 +32,7 @@ class KalmanFilter:
         self.dt = dt
         self.x_k = np.zeros((9,1))
         self.Q = np.zeros((9,9))
-        self.R = np.diag([10, 1.9, 1.9, 1.9])
+        self.R = np.diag([1, 1.9, 1.9, 1.9])
         self.P_k = np.eye(9)
         self.x_priori = np.zeros((9,1))
         self.P_priori = np.zeros((9,9))
@@ -87,35 +87,44 @@ class KalmanFilter:
         vel_mag = np.linalg.norm([vel_x, vel_y, vel_z])
         acc_x, acc_y, acc_z = self.x_k[2], self.x_k[5], self.x_k[8]
 
-        vel_norm_inv = 0
-        if (vel_y != 0 or vel_z != 0):
-            vel_norm_inv = 1/np.sqrt(vel_y**2+vel_z**2)
+        # vel_norm_inv = 0
+        # if (vel_y != 0 or vel_z != 0):
+        #     vel_norm_inv = 1/np.sqrt(vel_y**2+vel_z**2)
 
         # TODO: grab angular velocity from r_EKF instead of gyro
-        self.w_k = gyro
-        w_x, w_y, w_z = self.w_k[0], self.w_k[1], self.w_k[2]
+        self.w_k_body = gyro
 
+        self.w_k_world = self.w_k_body
+        w_x, w_y, w_z = self.w_k_world[0], self.w_k_world[1], self.w_k_world[2]
+        # print(self.w_k_world)
         # Calculate aerodynamic forces in body frame
         Fax = -0.5*rho*(vel_mag**2)*float(Ca)*(np.pi*r**2)
-        Fay = 0.5*rho*(vel_mag**2)*(-Cn*vel_y*vel_norm_inv)*(np.pi*r**2)
-        Faz = 0.5*rho*(vel_mag**2)*(Cn*vel_norm_inv)*(np.pi*r**2)
+        # Fay = 0.5*rho*(vel_mag**2)*(-Cn*vel_y*vel_norm_inv)*(np.pi*r**2)
+        # Faz = 0.5*rho*(vel_mag**2)*(Cn*vel_norm_inv)*(np.pi*r**2)
+        Fay = 0
+        Faz = 0
 
         # Transform forces to body frame
         Fg = np.array([-g, 0, 0]) * m
         Fg_body = np.linalg.inv(R) @ Fg
         Fgx, Fgy, Fgz = Fg_body[0], Fg_body[1], Fg_body[2]
         Ftx, Fty, Ftz = T[0],T[1],T[2]
-
+        # print(Fg_body/m)
         net_accels_body = np.array([Ftx+Fax+ Fgx, Fty+Fay+ Fgy, Ftz+Faz+ Fgz])/m
-        net_accels_world = np.linalg.inv(R) @ net_accels_body
+        net_accels_world = R @ net_accels_body
         a_x,a_y,a_z = net_accels_world[0],net_accels_world[1],net_accels_world[2]
-        xdot = np.array([vel_x, (a_x - (w_y*vel_z - w_z*vel_y)), 0.0,
-                 vel_y, (a_y - (w_z*vel_x - w_x*vel_z) ), 0.0,
-                 vel_z, (a_z - (w_x*vel_y - w_y*vel_x)), 0.0
+        
+
+        coriolis = -2*np.cross(self.w_k_world,np.array([vel_x,vel_y,vel_z]))
+        xdot = np.array([vel_x, (a_x + coriolis[0]), 0.0,
+                 vel_y, (a_y + coriolis[1] ), 0.0,
+                 vel_z, (a_z + coriolis[2]), 0.0
                 ])
         
         self.x_priori = self.x_k + xdot * self.s_dt
         coeff = -np.pi*Ca*(r**2)*rho / m
+
+
         # linearized dynamics are F
         self.F = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 0],
                         [0, coeff*vel_x, 0, 0, coeff*vel_y+w_z, 0, 0, coeff*vel_z - w_y, 0], 
