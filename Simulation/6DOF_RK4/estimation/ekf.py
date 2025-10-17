@@ -32,7 +32,7 @@ class KalmanFilter:
         self.dt = dt
         self.x_k = np.zeros((9,1))
         self.Q = np.zeros((9,9))
-        self.R = np.diag([2., 1.9, 1.9, 1.9])
+        self.R = np.diag([10, 1.9, 1.9, 1.9])
         self.P_k = np.eye(9)
         self.x_priori = np.zeros((9,1))
         self.P_priori = np.zeros((9,9))
@@ -106,10 +106,12 @@ class KalmanFilter:
         Fgx, Fgy, Fgz = Fg_body[0], Fg_body[1], Fg_body[2]
         Ftx, Fty, Ftz = T[0],T[1],T[2]
 
-        
-        xdot = np.array([vel_x, ((Fax + Ftx + Fgx) / m - (w_y*vel_z - w_z*vel_y)), 0.0,
-                 vel_y, ((Fay + Fty + Fgy) / m - (w_z*vel_x - w_x*vel_z) ), 0.0,
-                 vel_z, ((Faz + Ftz + Fgz) / m - (w_x*vel_y - w_y*vel_x)), 0.0
+        net_accels_body = np.array([Ftx+Fax+ Fgx, Fty+Fay+ Fgy, Ftz+Faz+ Fgz])/m
+        net_accels_world = np.linalg.inv(R) @ net_accels_body
+        a_x,a_y,a_z = net_accels_world[0],net_accels_world[1],net_accels_world[2]
+        xdot = np.array([vel_x, (a_x - (w_y*vel_z - w_z*vel_y)), 0.0,
+                 vel_y, (a_y - (w_z*vel_x - w_x*vel_z) ), 0.0,
+                 vel_z, (a_z - (w_x*vel_y - w_y*vel_x)), 0.0
                 ])
         
         self.x_priori = self.x_k + xdot * self.s_dt
