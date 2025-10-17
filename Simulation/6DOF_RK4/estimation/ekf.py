@@ -98,7 +98,8 @@ class KalmanFilter:
         w_x, w_y, w_z = self.w_k_world[0], self.w_k_world[1], self.w_k_world[2]
         # print(self.w_k_world)
         # Calculate aerodynamic forces in body frame
-        Fax = -0.5*rho*(vel_mag**2)*float(Ca)*(np.pi*r**2)
+        # Fax = -0.5*rho*(vel_mag**2)*float(Ca)*(np.pi*r**2)
+        Fax = 0
         # Fay = 0.5*rho*(vel_mag**2)*(-Cn*vel_y*vel_norm_inv)*(np.pi*r**2)
         # Faz = 0.5*rho*(vel_mag**2)*(Cn*vel_norm_inv)*(np.pi*r**2)
         Fay = 0
@@ -123,7 +124,7 @@ class KalmanFilter:
         
         self.x_priori = self.x_k + xdot * self.s_dt
         coeff = -np.pi*Ca*(r**2)*rho / m
-
+        coeff = 0 
 
         # linearized dynamics are F
         self.F = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 0],
