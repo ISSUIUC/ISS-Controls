@@ -42,7 +42,7 @@ class KalmanFilter:
         self.current_time = 0
         self.s_dt = dt
         self.current_vel = 0
-        self.wind = np.array([10, 0.0, 0.0])  # initial guess for wind in x,y,z
+        self.wind = np.array([10.0, 0.0, 0.0])  # initial guess for wind in x,y,z
         self.wind_alpha = 0.85                   # smoothing factor for adaptive update
 
 
@@ -171,6 +171,9 @@ class KalmanFilter:
             #measured_v = np.array([y_k[1] + (self.dt/2)*y_k[2], 0, 0]) 
             err = np.array([measured_v[0] - self.x_k[1], 0,0])
             self.wind = self.wind_alpha * self.wind + (1 - self.wind_alpha) * err
+            if(np.linalg.norm(self.wind) > 15):
+                self.wind = np.array([15.0, 0.0, 0.0])
+
             #self.wind *= 1.05
     
 
