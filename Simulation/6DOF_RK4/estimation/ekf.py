@@ -41,6 +41,10 @@ class KalmanFilter:
 
         self.current_time = 0
         self.s_dt = dt
+        self.current_vel = 0
+        self.wind = np.array([5, 0.0, 0.0])  # initial guess for wind in x,y,z
+        self.wind_alpha = 0.85                   # smoothing factor for adaptive update
+
 
         self.x_k = np.array([pos_x, vel_x, accel_x, pos_y, vel_y, accel_y, pos_z, vel_z, accel_z]).T
         self.w_k = np.zeros((3))  # angular velocity, not used in this filter
@@ -84,7 +88,8 @@ class KalmanFilter:
 
         g = 9.81 # Earth gravity
         vel_x, vel_y, vel_z = self.x_k[1], self.x_k[4], self.x_k[7]
-        vel_mag_relative = np.linalg.norm([vel_x-30, vel_y, vel_z])
+        v_rel = np.array([vel_x - self.wind[0], vel_y, vel_z]) 
+        vel_mag_relative = np.linalg.norm(v_rel) + 1e-6  # avoid div by 0
         acc_x, acc_y, acc_z = self.x_k[2], self.x_k[5], self.x_k[8]
 
         # vel_norm_inv = 0
@@ -158,6 +163,19 @@ class KalmanFilter:
 
         self.x_k = self.x_priori + K @ (y_k - (self.H @ self.x_priori))
         self.P_k = (np.eye(len(K)) - K @ self.H) @ self.P_priori
+
+        # crude adaptive wind based on difference between predicted and measured velocity
+        if (self.current_time > 1.0):  
+            self.current_vel += (self.dt)*y_k[1]
+            measured_v = np.array([self.current_vel, 0, 0])  
+            #measured_v = np.array([y_k[1] + (self.dt/2)*y_k[2], 0, 0]) 
+            err = np.array([measured_v[0] - self.x_k[1], 0,0])
+            self.wind = self.wind_alpha * self.wind + (1 - self.wind_alpha) * err
+            #self.wind *= 1.05
+    
+
+
+
 
         self.current_time += self.s_dt
 
