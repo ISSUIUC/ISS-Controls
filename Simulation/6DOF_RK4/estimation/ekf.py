@@ -42,7 +42,7 @@ class KalmanFilter:
         self.current_time = 0
         self.s_dt = dt
         self.current_vel = 0
-        self.wind = np.array([5, 0.0, 0.0])  # initial guess for wind in x,y,z
+        self.wind = np.array([10, 0.0, 0.0])  # initial guess for wind in x,y,z
         self.wind_alpha = 0.85                   # smoothing factor for adaptive update
 
 
@@ -88,7 +88,7 @@ class KalmanFilter:
 
         g = 9.81 # Earth gravity
         vel_x, vel_y, vel_z = self.x_k[1], self.x_k[4], self.x_k[7]
-        v_rel = np.array([vel_x - self.wind[0], vel_y, vel_z]) 
+        v_rel = np.array([vel_x - 1.2*self.wind[0], vel_y, vel_z]) 
         vel_mag_relative = np.linalg.norm(v_rel) + 1e-6  # avoid div by 0
         acc_x, acc_y, acc_z = self.x_k[2], self.x_k[5], self.x_k[8]
 
@@ -99,13 +99,13 @@ class KalmanFilter:
         # TODO: grab angular velocity from r_EKF instead of gyro
         self.w_k_body = gyro
 
-        self.w_k_world = self.w_k_body
+        self.w_k_world =R@ self.w_k_body
         w_x, w_y, w_z = self.w_k_world[0], self.w_k_world[1], self.w_k_world[2]
         # print(self.w_k_world)
         # Calculate aerodynamic forces in body frame
 
         
-        Fax = -0.5*rho*(vel_mag_relative**2  )*float(Ca)*(np.pi*r**2)
+        Fax = -0.5*rho*(vel_mag_relative)*float(Ca)*(np.pi*r**2) * v_rel[0]
         # Fax = 0
         # Fay = 0.5*rho*(vel_mag**2)*(-Cn*vel_y*vel_norm_inv)*(np.pi*r**2)
         # Faz = 0.5*rho*(vel_mag**2)*(Cn*vel_norm_inv)*(np.pi*r**2)
