@@ -19,7 +19,7 @@ class Simulator():
         
     ### TEST PURPOSES ###
     def newtonProp(self, y0, dt, time_stamp, flap_ext=0) -> np.ndarray:
-        temp = (self.rocket.forces.get_force(np.array([y0[0], y0[1], y0[3], y0[4]]), flap_ext, time_stamp, multiplier = self.Vmultiplier))
+        temp = (self.rocket.forces.get_force(np.array([y0[0], y0[1], y0[3], y0[4]]), flap_ext, time_stamp, self.Vmultiplier))
         a = temp[0]/self.rocket.rocket_total_mass
 
         moment = temp[1]

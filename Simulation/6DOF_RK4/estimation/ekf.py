@@ -116,13 +116,13 @@ class KalmanFilter:
         coeff = -np.pi*Ca*(r**2)*rho / m
         # linearized dynamics are F
         self.F = np.array([[0, 1, 0, 0, 0, 0, 0, 0, 0],
-                        [0, coeff*vel_x, 0, 0, coeff*vel_y+w_z, 0, 0, coeff*vel_z - w_y, 0], 
+                        [0, coeff*vel_x, 1/2, 0, (coeff*vel_y+w_z)/2, 0, 0, (coeff*vel_z - w_y)/2, 0], 
                         [0, 0, 0, 0, 0, 0, 0, 0, 0], 
                         [0, 0, 0, 0, 1, 0, 0, 0, 0], 
-                        [0, -w_z, 0, 0, 0, 0, 0, w_x, 0], 
+                        [0, -w_z/2, 0, 0, 0, 1/2, 0, w_x/2, 0], 
                         [0, 0, 0, 0, 0, 0, 0, 0, 0], 
                         [0, 0, 0, 0, 0, 0, 0, 1, 0], 
-                        [0, w_y, 0, 0, -w_x, 0, 0, 0, 0], 
+                        [0, w_y/2, 0, 0, -w_x/2, 0, 0, 0, 1/2], 
                         [0, 0, 0, 0, 0, 0, 0, 0, 0]])
 
         self.P_priori = self.F @ self.P_k @ self.F.T + self.Q

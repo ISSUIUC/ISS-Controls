@@ -32,7 +32,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
-import shutil
+import argparse
+import subprocess
 
 sys.path.insert(0, os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..')))
@@ -49,8 +50,7 @@ import environment.atmosphere as atmosphere
 
 # Load desired config file
 config = dataloader.config
-angleCheck = input("Nominal or Tilted Flight: ").lower()
-tiltCommand = "Tilt".lower()
+nominal_sim = True 
 
 # Runs simulation for the specific component of the rocket
 class Simulation:
@@ -63,12 +63,10 @@ class Simulation:
         self.x = x0.copy()
         self.baro = 0
         self.time_stamp = time_stamp
-        self.nominal = angleCheck
-        if (self.nominal  == tiltCommand):
+        self.nominal = nominal_sim
+        if not self.nominal: # tilted launch
             sim.Vmultiplier = 30
         self.sensor_config = self.rocket.stage_config['sensors']
-
-    # Call on Navigation class?
 
     def time_step(self):
         self.time_stamp += self.dt
@@ -168,6 +166,23 @@ def simulator(x0, rocket, motor, dt) -> None:
     t_end = time.time() - t_start
     print(f"Runtime: {t_end:.2f} seconds")
 
+def parse_arguments():
+    """Parse command line arguments."""
+    parser = argparse.ArgumentParser(
+        description='Run rocket simulation with various flight configurations.'
+    )
+    parser.add_argument(
+        '--tilt',
+        action='store_true',
+        help='Run tilted flight simulation (default: nominal flight)'
+    )
+
+    parser.add_argument(
+        '--plot',
+        action="store_true",
+        help='Plotting the results'
+    )
+    return parser.parse_args()
 
 if __name__ == '__main__':
     x0 = np.zeros((6, 3))
@@ -175,6 +190,12 @@ if __name__ == '__main__':
     dt = 0.01
 
     atm = atmosphere.Atmosphere(enable_direction_variance=True, enable_magnitude_variance=True)
+
+    # Parse arguments
+    args = parse_arguments()
+    if args.tilt:
+        print("Running tilted rocket simulation...")
+        nominal_sim = False
 
     stages = []
     for stage in config['rocket']['stages'][1:]:
@@ -212,4 +233,15 @@ if __name__ == '__main__':
         f.write("time,pos_x,pos_y,pos_z,vel_x,vel_y,vel_z,accel_x,accel_y,accel_z,ang_pos_x,ang_pos_y,ang_pos_z,ang_vel_x,ang_vel_y,ang_vel_z,ang_accel_x,ang_accel_y,ang_accel_z,alpha,rocket_total_mass,motor_mass,flap_ext,baro_alt,imu_accel_x,imu_accel_y,imu_accel_z,imu_ang_pos_x,imu_ang_pos_y,imu_ang_pos_z,imu_gyro_x,imu_gyro_y,imu_gyro_z,kalman_pos_x,kalman_vel_x,kalman_accel_x,kalman_pos_y,kalman_vel_y,kalman_accel_y,kalman_pos_z,kalman_vel_z,kalman_accel_z,pos_cov_x,vel_cov_x,accel_cov_x,pos_cov_y,vel_cov_y,accel_cov_y,pos_cov_z,vel_cov_z,accel_cov_z,kalman_rpos_x,kalman_rvel_x,kalman_raccel_x,kalman_rpos_y,kalman_rvel_y,kalman_raccel_y,kalman_rpos_z,kalman_rvel_z,kalman_raccel_z\n")
         for point in record:
             f.write(f"{','.join(point)}\n")
+
+    if args.plot:
+        print("Running analysis...")
+        analysis_script = os.path.join(os.path.dirname(__file__), '../plotter/analysis.py')
+        try:
+            subprocess.run([sys.executable, analysis_script], check=True)
+            print("Analysis complete!")
+        except subprocess.CalledProcessError as e:
+            print(f"Error running analysis.py: {e}")
+        except FileNotFoundError:
+            print(f"Error: analysis.py not found at {analysis_script}")
 
